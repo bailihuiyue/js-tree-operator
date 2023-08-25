@@ -1,9 +1,9 @@
 <h1 align="center">Tree Operator</h1>
 <div align="center">
-像Jquery一样操作树级结构  <a href="https://vuecomponent.github.io/ant-design-vue/docs/vue/introduce-cn/" target="_blank">Ant Design of Vue</a>
+<a href="https://github.com/bailihuiyue/treeOperator/" target="_blank">像Jquery一样操作树级结构  </a>
 </div>
 
-码云地址: https://gitee.com/Onces/ant-design-pro-vue3
+码云地址: https://gitee.com/Onces/treeOperator
 
 ### 1.项目下载和运行
 
