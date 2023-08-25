@@ -1,9 +1,9 @@
 <h1 align="center">Tree Operator</h1>
 <div align="center">
-<a href="https://github.com/bailihuiyue/treeOperator/" target="_blank">像Jquery一样操作树级结构  </a>
+<a href="https://github.com/bailihuiyue/js-tree-operator/" target="_blank">像Jquery一样操作树级结构  </a>
 </div>
 
-码云地址: https://gitee.com/Onces/treeOperator
+码云地址: https://gitee.com/Onces/js-tree-operator
 
 ### 1.项目下载和运行
 
