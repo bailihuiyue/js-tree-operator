@@ -1,6 +1,6 @@
 {
-  "name": "tree-operator",
-  "title": "Tree Operator",
+  "name": "js-tree-operator",
+  "title": "Js Tree Operator",
   "description": "Operate js tree like jquery, 像JQuery一样操作树",
   "version": "0.1.0",
   "private": false,
@@ -37,7 +37,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vueComponent/ant-design-vue.git"
+    "url": "git+https://github.com/bailihuiyue/js-tree-operator.git"
   },
   "license": "MIT",
   "auth":"Ones",
