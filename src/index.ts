@@ -30,10 +30,16 @@ class T {
     this.pidName = pidName
   }
 
-  private matchCondition(node, condition) {
+  private matchCondition(node, condition, options) {
     for (let key in condition) {
-      if (node[key] !== condition[key]) {
-        return false
+      if (options.useLike) {
+        if (node[key].indexOf(condition[key]) < 0) {
+          return false
+        }
+      } else {
+        if (node[key] !== condition[key]) {
+          return false
+        }
       }
     }
     return true
@@ -79,12 +85,12 @@ class T {
   }
 
   // getAll链式调用仅支持remove
-  getAll(condition) {
+  getAll(condition, options) {
     const result: object[] = []
 
     const traverse = (nodes) => {
       for (let node of nodes) {
-        if (this.matchCondition(node, condition)) {
+        if (this.matchCondition(node, condition, options)) {
           result.push(node)
         }
         if (node[this.childrenName] && node[this.childrenName].length > 0) {
@@ -98,11 +104,11 @@ class T {
     return this
   }
 
-  getFirst(condition) {
+  getFirst(condition, options) {
     let result = null
     const traverse = (nodes) => {
       for (let node of nodes) {
-        if (this.matchCondition(node, condition)) {
+        if (this.matchCondition(node, condition, options)) {
           return (result = node)
         }
         if (node[this.childrenName] && node[this.childrenName].length > 0) {
@@ -134,7 +140,14 @@ class T {
         }
       }
     }
-    traverse(this.result, this.treeData)
+    // 对应getAll获取到的数据
+    if (Array.isArray(this.result)) {
+      this.result.forEach((item) => {
+        traverse(item, this.treeData)
+      })
+    } else {
+      traverse(this.result, this.treeData)
+    }
     this.result = result
     return this
   }
