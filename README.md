@@ -19,6 +19,7 @@
 | setConfig      | 本次调用中单独配置                      | 同上                                                         | O<br />(O表示整体对象) | 是           |                              |
 | getAll         | 获取所有匹配到的内容                    | 第二个参数{ useLike:true } 可以支持模糊搜索 | [{}]                   | 仅支持remove |                              |
 | getFirst       | 获取第一个                              | 第二个参数{ useLike:true } 可以支持模糊搜索 | {}                     | 是           |                              |
+| getByKeys | 根据字段批量获取节点 | keyName, arr, options,可以支持模糊搜索 | [] | 是 | keyName表示要查找的字段名,arr是key的数组,可以支持模糊搜索 |
 | parent         | 直接父节点                              |                                                              | {}                     | 是           |                              |
 | parents        | 所有父节点                              |                                                              | [{}]                   | 仅支持remove | 可以支持getAll后获取,本质为循环每一条,因此性能较低 |
 | flat           | 拍平选中的树结构                        |                                                              | [{}]                   | 否           |                              |
@@ -37,6 +38,8 @@
 | siblingsLength | 获取找到节点的兄弟节点长度              | 节点                                                         | number                 | 否           |                              |
 | toFieldArray   | 将找到节点的指定字段变为数组            | key:要转换的字段名                                           | []                     | 否           | 第二个参数表示是否包含子节点 |
 | current        | 直接设定当前节点,然后以此为条件继续操作 | 节点                                                         | O                      | 是  ||
+
+
 ### 3.代码示例
 
 ```javascript
@@ -112,6 +115,15 @@ console.log(result)
 //获取第一个 第二个参数{ useLike:true } 可以支持模糊搜索
 const result = O(data).getFirst({ key: 8 },{useLike:true}).result
 console.log(result)
+
+//获取所有匹配到的内容 第二个可选参数{ useLike:true } 可以支持模糊搜索,默认false
+const result = O(data).getAll({ key: 8 },{useLike:true}).result
+console.log(result)
+
+//根据字段批量获取节点 可以支持模糊搜索
+const result = O(res).getByKeys('id', ['xxx'], { useLike: true }).result
+console.log(result)
+
 
 // 直接父节点
 const parent = O(data).getFirst({ key: 2 }).parent().result

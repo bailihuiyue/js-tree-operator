@@ -32,7 +32,7 @@ class T {
 
   private matchCondition(node, condition, options) {
     for (let key in condition) {
-      if (options.useLike) {
+      if (options?.useLike) {
         if (node[key].indexOf(condition[key]) < 0) {
           return false
         }
@@ -85,7 +85,7 @@ class T {
   }
 
   // getAll链式调用仅支持remove
-  getAll(condition, options) {
+  getAll(condition, options?) {
     const result: object[] = []
 
     const traverse = (nodes) => {
@@ -104,7 +104,7 @@ class T {
     return this
   }
 
-  getFirst(condition, options) {
+  getFirst(condition, options?) {
     let result = null
     const traverse = (nodes) => {
       for (let node of nodes) {
@@ -117,6 +117,28 @@ class T {
       }
     }
     traverse(this.treeData)
+    this.result = result
+    return this
+  }
+
+  getByKeys(keyName, arr, options?) {
+    const useLike = options?.useLike
+    let result:any = []
+    if (useLike) {
+      this.map((node) => {
+        arr.forEach((item) => {
+          if (node[keyName].indexOf(item) >= 0) {
+            result.push(node)
+          }
+        })
+      })
+    } else {
+      this.map((node) => {
+        if (arr.includes(node[keyName])) {
+          result.push(node)
+        }
+      })
+    }
     this.result = result
     return this
   }

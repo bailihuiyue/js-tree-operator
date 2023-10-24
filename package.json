@@ -2,7 +2,7 @@
   "name": "js-tree-operator",
   "title": "Js Tree Operator",
   "description": "Operate js tree like jquery, 像JQuery一样操作树",
-  "version": "0.1.2",
+  "version": "0.3.2",
   "private": false,
   "scripts":{
     "dev": "rollup -w -c rollup.config.js --environment MODE:dev",
