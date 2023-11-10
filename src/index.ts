@@ -213,7 +213,8 @@ class T {
   // 循环所有节点 支持链式调用
   map(cb) {
     const traverse = (nodes) => {
-      for (let node of nodes) {
+      const temp = Array.isArray(nodes)?nodes:[nodes]
+      for (let node of temp) {
         cb && cb(node)
         if (node[this.childrenName] && node[this.childrenName].length > 0) {
           traverse(node[this.childrenName])
