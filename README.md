@@ -38,6 +38,7 @@
 | siblingsLength | 获取找到节点的兄弟节点长度              | 节点                                                         | number                 | 否           |                              |
 | toFieldArray   | 将找到节点的指定字段变为数组            | key:要转换的字段名                                           | []                     | 否           | 第二个参数表示是否包含子节点 |
 | current        | 直接设定当前节点,然后以此为条件继续操作 | 节点                                                         | O                      | 是  ||
+| addDepth | 给每一个节点添加深度标识 | fieldName = 'depth' | O | 是 |参数表示添加的字段名,默认depth|
 
 
 ### 3.代码示例

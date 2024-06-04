@@ -487,8 +487,21 @@ class T {
     return result
   }
 
-  // 画一个表格,类似于antd的组件props属性,显示每个方法的参数,默认值,返回类型等
-  // 可配置config,用于children.pid的更换
+  // 给每一个节点添加深度标识
+  addDepth(fieldName = 'depth') {
+    const traverse = (nodes, depth = 0) => {
+      const temp = Array.isArray(nodes) ? nodes : [nodes];
+      for (let node of temp) {
+        node[fieldName] = depth;
+        if (node[this.childrenName] && node[this.childrenName].length > 0) {
+          traverse(node[this.childrenName], depth + 1);
+        }
+      }
+    };
+
+    traverse(this.result);
+    return this;
+  }
 }
 
 export default (treeData?) => new T(treeData)
