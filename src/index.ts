@@ -212,12 +212,16 @@ class T {
 
   // 循环所有节点 支持链式调用
   map(cb) {
-    const traverse = (nodes) => {
-      const temp = Array.isArray(nodes)?nodes:[nodes]
-      for (let node of temp) {
-        cb && cb(node)
+    const traverse = (nodes, parentIndex = 0) => {
+      const temp = Array.isArray(nodes) ? nodes : [nodes]
+      for (let i = 0; i < temp.length; i++) {
+        const node = temp[i]
+        const index = i
+        const isFirst = index === 0
+        const isLast = index === temp.length - 1
+        cb && cb(node, { index, isFirst, isLast })
         if (node[this.childrenName] && node[this.childrenName].length > 0) {
-          traverse(node[this.childrenName])
+          traverse(node[this.childrenName], index)
         }
       }
     }
@@ -501,6 +505,25 @@ class T {
 
     traverse(this.result);
     return this;
+  }
+
+  // 获取右侧路径：从根到叶子节点的最右侧路径
+  // 始终查找树的最右侧节点并返回最右侧节点组成的树
+  getRightNodes(cb?) {
+    const path: any[] = []
+    let nodes = Array.isArray(this.result) ? this.result : [this.result]
+    
+    while (nodes.length > 0) {
+      const rightmost = nodes[nodes.length - 1]
+      if (!rightmost) break
+      
+      path.push(rightmost)
+      cb?.(rightmost)
+      nodes = rightmost[this.childrenName] || []
+    }
+    
+    this.result = path
+    return this
   }
 }
 

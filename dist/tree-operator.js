@@ -59,10 +59,17 @@ var treeOperator = (function (exports) {
             this.primaryKeyName = primaryKeyName;
             this.pidName = pidName;
         }
-        T.prototype.matchCondition = function (node, condition) {
+        T.prototype.matchCondition = function (node, condition, options) {
             for (var key in condition) {
-                if (node[key] !== condition[key]) {
-                    return false;
+                if (options === null || options === void 0 ? void 0 : options.useLike) {
+                    if (node[key].indexOf(condition[key]) < 0) {
+                        return false;
+                    }
+                }
+                else {
+                    if (node[key] !== condition[key]) {
+                        return false;
+                    }
                 }
             }
             return true;
@@ -101,13 +108,13 @@ var treeOperator = (function (exports) {
             return this;
         };
         // getAll链式调用仅支持remove
-        T.prototype.getAll = function (condition) {
+        T.prototype.getAll = function (condition, options) {
             var _this = this;
             var result = [];
             var traverse = function (nodes) {
                 for (var _i = 0, nodes_1 = nodes; _i < nodes_1.length; _i++) {
                     var node = nodes_1[_i];
-                    if (_this.matchCondition(node, condition)) {
+                    if (_this.matchCondition(node, condition, options)) {
                         result.push(node);
                     }
                     if (node[_this.childrenName] && node[_this.childrenName].length > 0) {
@@ -119,13 +126,13 @@ var treeOperator = (function (exports) {
             this.result = result;
             return this;
         };
-        T.prototype.getFirst = function (condition) {
+        T.prototype.getFirst = function (condition, options) {
             var _this = this;
             var result = null;
             var traverse = function (nodes) {
                 for (var _i = 0, nodes_2 = nodes; _i < nodes_2.length; _i++) {
                     var node = nodes_2[_i];
-                    if (_this.matchCondition(node, condition)) {
+                    if (_this.matchCondition(node, condition, options)) {
                         return (result = node);
                     }
                     if (node[_this.childrenName] && node[_this.childrenName].length > 0) {
@@ -134,6 +141,28 @@ var treeOperator = (function (exports) {
                 }
             };
             traverse(this.treeData);
+            this.result = result;
+            return this;
+        };
+        T.prototype.getByKeys = function (keyName, arr, options) {
+            var useLike = options === null || options === void 0 ? void 0 : options.useLike;
+            var result = [];
+            if (useLike) {
+                this.map(function (node) {
+                    arr.forEach(function (item) {
+                        if (node[keyName].indexOf(item) >= 0) {
+                            result.push(node);
+                        }
+                    });
+                });
+            }
+            else {
+                this.map(function (node) {
+                    if (arr.includes(node[keyName])) {
+                        result.push(node);
+                    }
+                });
+            }
             this.result = result;
             return this;
         };
@@ -158,7 +187,15 @@ var treeOperator = (function (exports) {
                     }
                 }
             };
-            traverse(this.result, this.treeData);
+            // 对应getAll获取到的数据
+            if (Array.isArray(this.result)) {
+                this.result.forEach(function (item) {
+                    traverse(item, _this.treeData);
+                });
+            }
+            else {
+                traverse(this.result, this.treeData);
+            }
             this.result = result;
             return this;
         };
@@ -202,10 +239,14 @@ var treeOperator = (function (exports) {
         // 循环所有节点 支持链式调用
         T.prototype.map = function (cb) {
             var _this = this;
-            var traverse = function (nodes) {
-                for (var _i = 0, nodes_5 = nodes; _i < nodes_5.length; _i++) {
-                    var node = nodes_5[_i];
-                    cb && cb(node);
+            var traverse = function (nodes, parentIndex) {
+                var temp = Array.isArray(nodes) ? nodes : [nodes];
+                for (var i = 0; i < temp.length; i++) {
+                    var node = temp[i];
+                    var index = i;
+                    var isFirst = index === 0;
+                    var isLast = index === temp.length - 1;
+                    cb && cb(node, { index: index, isFirst: isFirst, isLast: isLast });
                     if (node[_this.childrenName] && node[_this.childrenName].length > 0) {
                         traverse(node[_this.childrenName]);
                     }
@@ -470,6 +511,40 @@ var treeOperator = (function (exports) {
                 result = this.result.map(function (item) { return item[key]; });
             }
             return result;
+        };
+        // 给每一个节点添加深度标识
+        T.prototype.addDepth = function (fieldName) {
+            var _this = this;
+            if (fieldName === void 0) { fieldName = 'depth'; }
+            var traverse = function (nodes, depth) {
+                if (depth === void 0) { depth = 0; }
+                var temp = Array.isArray(nodes) ? nodes : [nodes];
+                for (var _i = 0, temp_1 = temp; _i < temp_1.length; _i++) {
+                    var node = temp_1[_i];
+                    node[fieldName] = depth;
+                    if (node[_this.childrenName] && node[_this.childrenName].length > 0) {
+                        traverse(node[_this.childrenName], depth + 1);
+                    }
+                }
+            };
+            traverse(this.result);
+            return this;
+        };
+        // 获取右侧路径：从根到叶子节点的最右侧路径
+        // 始终查找树的最右侧节点并返回最右侧节点组成的树
+        T.prototype.getRightNodes = function (cb) {
+            var path = [];
+            var nodes = Array.isArray(this.result) ? this.result : [this.result];
+            while (nodes.length > 0) {
+                var rightmost = nodes[nodes.length - 1];
+                if (!rightmost)
+                    break;
+                path.push(rightmost);
+                cb === null || cb === void 0 ? void 0 : cb(rightmost);
+                nodes = rightmost[this.childrenName] || [];
+            }
+            this.result = path;
+            return this;
         };
         return T;
     }());

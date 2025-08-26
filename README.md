@@ -23,7 +23,7 @@
 | parent         | 直接父节点                              |                                                              | {}                     | 是           |                              |
 | parents        | 所有父节点                              |                                                              | [{}]                   | 仅支持remove | 可以支持getAll后获取,本质为循环每一条,因此性能较低 |
 | flat           | 拍平选中的树结构                        |                                                              | [{}]                   | 否           |                              |
-| map            | 递归循环所有节点                        |                                                              | O                      | 是           |                              |
+| map            | 递归循环所有节点                        |                                                              | O                      | 是           | 每次循环都会返回当前节点和一个对象,{index:0,isFirst:true,isLast:true},用来表示该对象的位置 |
 | next           | 获取找到节点的下一个                    |                                                              | {}                     | 是           |                              |
 | nextAll        | 获取找到节点的下面所有的节点            |                                                              | []                     | 仅支持remove |                              |
 | prev           | 获取找到节点的前一个                    |                                                              | {}                     | 是           |                              |
@@ -39,6 +39,7 @@
 | toFieldArray   | 将找到节点的指定字段变为数组            | key:要转换的字段名                                           | []                     | 否           | 第二个参数表示是否包含子节点 |
 | current        | 直接设定当前节点,然后以此为条件继续操作 | 节点                                                         | O                      | 是  ||
 | addDepth | 给每一个节点添加深度标识 | fieldName = 'depth' | O | 是 |参数表示添加的字段名,默认depth|
+| getRightNodes | 始终查找树的最右侧节点并返回最右侧节点组成的树 |  | O | 是 |参数表示每个节点的回调|
 
 
 ### 3.代码示例
@@ -139,8 +140,9 @@ const flat = O(data).getFirst({ key: 1 }).flat().result
 console.log(flat)
 
 // 递归循环所有节点
-const map = O(data).map((item) => {
+const map = O(data).map((item,pos) => {
   item.a='123'
+  console.log(item.id, pos);
 }).result
 console.log(map);
 
@@ -220,9 +222,3 @@ const result = O(data).current(item).parent().result
 ## 兼容性
 
 理论上支持所有js语言的东东,比如node,vue,react,html等,若有不支持的,请在rollup中自行配置打包条件
-
-##### 落魄前端,在线要饭
-
-<img src="https://i.imgtg.com/2023/03/22/9tzCN.jpg" width=200/>
-
-下次一定?给个Star也行啊

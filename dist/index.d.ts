@@ -17,8 +17,9 @@ declare class T {
     setConfig(c: configType): this;
     showConfig(): this;
     current(node: any): this;
-    getAll(condition: any): this;
-    getFirst(condition: any): this;
+    getAll(condition: any, options?: any): this;
+    getFirst(condition: any, options?: any): this;
+    getByKeys(keyName: any, arr: any, options?: any): this;
     first(): this;
     parents(): this;
     parent(): this;
@@ -37,6 +38,8 @@ declare class T {
     treeToList(): this;
     siblingsLength(): number;
     toFieldArray(key: any, deep?: boolean): object[];
+    addDepth(fieldName?: string): this;
+    getRightNodes(cb?: any): this;
 }
 declare const _default: (treeData?: any) => T;
 export default _default;
