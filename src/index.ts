@@ -125,7 +125,7 @@ class T {
     const useLike = options?.useLike
     let result: any = []
     if (useLike) {
-      this.map((node) => {
+      this.forEach((node) => {
         arr.forEach((item) => {
           if (node[keyName].indexOf(item) >= 0) {
             result.push(node)
@@ -133,7 +133,7 @@ class T {
         })
       })
     } else {
-      this.map((node) => {
+      this.forEach((node) => {
         if (arr.includes(node[keyName])) {
           result.push(node)
         }
@@ -211,7 +211,7 @@ class T {
   }
 
   // 循环所有节点 支持链式调用
-  map(cb) {
+  forEach(cb) {
     const traverse = (nodes, parentIndex = 0) => {
       const temp = Array.isArray(nodes) ? nodes : [nodes]
       for (let i = 0; i < temp.length; i++) {
@@ -379,72 +379,77 @@ class T {
     return this
   }
 
-  clone() {
-    const deepClone = (obj) => {
-      if (typeof obj !== 'object' || obj === null) {
-        return obj
-      }
+  private deepClone = (obj) => {
+    if (typeof obj !== 'object' || obj === null) {
+      return obj
+    }
 
-      if (Array.isArray(obj)) {
-        const copy: object[] = []
-        obj.forEach(function (item) {
-          copy.push(deepClone(item))
-        })
-        return copy
-      }
-
-      const copy = {}
-      for (var key in obj) {
-        if (obj.hasOwnProperty(key)) {
-          copy[key] = deepClone(obj[key])
-        }
-      }
+    if (Array.isArray(obj)) {
+      const copy: object[] = []
+      obj.forEach((item) => {
+        // 使用箭头函数保持this上下文
+        copy.push(this.deepClone(item))
+      })
       return copy
     }
-    this.result = deepClone(this.result)
+
+    const copy = {}
+    for (var key in obj) {
+      if (obj.hasOwnProperty(key)) {
+        copy[key] = this.deepClone(obj[key])
+      }
+    }
+    return copy
+  }
+
+  clone() {
+    this.result = this.deepClone(this.result)
     return this
   }
 
-  // list必须传入rootId(根id)
-  listToTree(list, rootId) {
-    if (rootId === undefined) {
-      throw new Error('rootId is required')
+  // list支持自动识别根节点; 传入rootId则仅以该rootId为根挂载顶层
+  listToTree(rootId?) {
+    const idKey = this.primaryKeyName
+    const pidKey = this.pidName
+
+    if (!Array.isArray(this.treeData)) {
+      throw new Error('list must be an array')
     }
-    // 判断根是否存在
-    let hasRoot = false
-    list.forEach((item) => {
-      if (item.pid === rootId) {
-        hasRoot = true
-      }
-    })
-    if (!hasRoot) {
-      // 找不到根
-      throw new Error('cannot find tree root!')
-    }
+
     const map = {}
     const result: object[] = []
-    const traverse = (data, pid) => {
-      for (const item of data) {
-        map[item.id] = { ...item }
-      }
-      for (const item of data) {
-        const node = map[item.id]
-        if (item.pid === pid) {
-          result.push(node)
-        } else {
-          // 滚雪球,利用了对象引用地址的一致性,map和result同一对象的引用地址总是一样的
-          // 先在result中生成了根节点
-          // 找到的节点根据pid和id的关系挂children挂到最后根节点,map是一个临时的变量
-          // 有意义的树节点会push到result中
-          const parent = map[item.pid]
-          if (!parent[this.childrenName]) {
-            parent[this.childrenName] = []
-          }
-          parent[this.childrenName].push(node)
+
+    // 先克隆所有节点到map，键为id
+    for (const item of this.treeData) {
+      map[item[idKey]] = { ...item }
+    }
+
+    // 构建父子关系，并确定顶层节点
+    for (const item of this.treeData) {
+      const node = map[item[idKey]]
+      const parentId = item[pidKey]
+      const parent = map[parentId]
+
+      const isTopByRootId = rootId !== undefined && parentId === rootId
+      const isAutoTop =
+        rootId === undefined && (!parent || parentId === null || parentId === undefined)
+
+      if (isTopByRootId || isAutoTop) {
+        result.push(node)
+      } else if (parent) {
+        if (!parent[this.childrenName]) {
+          parent[this.childrenName] = []
         }
+        parent[this.childrenName].push(node)
+      } else {
+        // 父节点缺失且未作为顶层纳入，忽略该项
       }
     }
-    traverse(list, rootId)
+
+    if (result.length === 0) {
+      throw new Error('cannot find tree root!')
+    }
+
     this.result = result
     this.treeData = result
     return this
@@ -458,7 +463,7 @@ class T {
         for (let key in node) {
           if (key !== this.childrenName) {
             temp[key] = node[key]
-            temp[this.pidName] = parentId
+            temp[this.pidName] = parentId || node[this.pidName]
           }
         }
         result.push(temp)
@@ -484,7 +489,7 @@ class T {
   toFieldArray(key, deep = true) {
     let result: object[] = []
     if (deep) {
-      this.map((item) => result.push(item[key]))
+      this.forEach((item) => result.push(item[key]))
     } else {
       result = this.result.map((item) => item[key])
     }
@@ -523,6 +528,58 @@ class T {
     }
 
     this.result = path
+    return this
+  }
+
+  filter(condition: (node: any) => boolean) {
+    // 过滤节点的递归函数
+    const filterNodes = (nodes: any[]): any[] => {
+      if (!Array.isArray(nodes)) return nodes
+
+      const filteredNodes: any[] = []
+
+      for (const node of nodes) {
+        // 检查当前节点是否满足条件
+        if (condition(node)) {
+          // 如果满足条件，复制该节点
+          const newNode = this.deepClone(node)
+
+          // 如果节点有子节点，递归过滤子节点
+          if (
+            newNode[this.childrenName] &&
+            Array.isArray(newNode[this.childrenName]) &&
+            newNode[this.childrenName].length > 0
+          ) {
+            newNode[this.childrenName] = filterNodes(newNode[this.childrenName])
+          }
+
+          filteredNodes.push(newNode)
+        } else {
+          // 如果当前节点不满足条件，但仍需要检查其子节点
+          // 因为子节点可能满足条件，需要保留子树结构
+          if (
+            node[this.childrenName] &&
+            Array.isArray(node[this.childrenName]) &&
+            node[this.childrenName].length > 0
+          ) {
+            const filteredChildren = filterNodes(node[this.childrenName])
+            // 如果子节点中有满足条件的节点，则将这些节点添加到结果中
+            if (filteredChildren.length > 0) {
+              const newNode = this.deepClone(node)
+              newNode[this.childrenName] = filteredChildren
+              filteredNodes.push(newNode)
+            }
+          }
+        }
+      }
+
+      return filteredNodes
+    }
+
+    // 对整个树进行过滤
+    const filteredTree = filterNodes(this.treeData)
+
+    this.result = filteredTree
     return this
   }
 }

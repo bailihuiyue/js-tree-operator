@@ -23,7 +23,7 @@
 | parent         | 直接父节点                              |                                                              | {}                     | 是           |                              |
 | parents        | 所有父节点                              |                                                              | [{}]                   | 仅支持remove | 可以支持getAll后获取,本质为循环每一条,因此性能较低 |
 | flat           | 拍平选中的树结构                        |                                                              | [{}]                   | 否           |                              |
-| map            | 递归循环所有节点                        |                                                              | O                      | 是           | 每次循环都会返回当前节点和一个对象,{index:0,isFirst:true,isLast:true},用来表示该对象的位置 |
+| forEach      | 递归循环所有节点                        |                                                              | O                      | 是           | 每次循环都会返回当前节点和一个对象,{index:0,isFirst:true,isLast:true},用来表示该对象的位置 |
 | next           | 获取找到节点的下一个                    |                                                              | {}                     | 是           |                              |
 | nextAll        | 获取找到节点的下面所有的节点            |                                                              | []                     | 仅支持remove |                              |
 | prev           | 获取找到节点的前一个                    |                                                              | {}                     | 是           |                              |
@@ -39,7 +39,8 @@
 | toFieldArray   | 将找到节点的指定字段变为数组            | key:要转换的字段名                                           | []                     | 否           | 第二个参数表示是否包含子节点 |
 | current        | 直接设定当前节点,然后以此为条件继续操作 | 节点                                                         | O                      | 是  ||
 | addDepth | 给每一个节点添加深度标识 | fieldName = 'depth' | O | 是 |参数表示添加的字段名,默认depth|
-| getRightNodes | 始终查找树的最右侧节点并返回最右侧节点组成的树 |  | O | 是 |参数表示每个节点的回调|
+| getRightNodes | 始终查找树的最右侧节点并返回最右侧节点组成的树 | 可传入回调函数 | O | 是 |参数表示每个节点的回调|
+| filter | 过滤内容 | (node: any) => boolean | O | 是 |像Array.filter一样使用|
 
 
 ### 3.代码示例
@@ -140,11 +141,11 @@ const flat = O(data).getFirst({ key: 1 }).flat().result
 console.log(flat)
 
 // 递归循环所有节点
-const map = O(data).map((item,pos) => {
+const forEach = O(data).forEach((item,pos) => {
   item.a='123'
   console.log(item.id, pos);
 }).result
-console.log(map);
+console.log(forEach);
 
 //获取找到节点的下一个
 const next = O(data).getFirst({ key: 9 }).next().result
@@ -194,8 +195,8 @@ const list = [
   { a: 5, b: 5, pid: 4, id: 5 }
 ]
 
-// 列表转树(必须定义根节点id,否则无法组成树)
-const listToTree = O().listToTree(list, 0).result
+// 列表转树
+const listToTree = O().listToTree(list).result
 console.log(listToTree)
 
 // 树转列表
@@ -217,6 +218,14 @@ console.log(toFieldArray)
 // 直接设定当前节点,然后以此为条件继续操作
 cosnt item = O(data).getFirst({ id: 6 }).result
 const result = O(data).current(item).parent().result
+
+// 始终查找整个树的最右侧节点
+cosnt item = O(data).getRightNodes().result
+console.log(item)
+
+// 过滤树并生成新的树
+cosnt item = O(data).filter(item=>item.pid===0).result
+console.log(item)
 ```
 
 ## 兼容性
