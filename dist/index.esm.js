@@ -47,6 +47,27 @@ var globalConfig = function (c) {
 };
 var T = /** @class */ (function () {
     function T(data) {
+        var _this = this;
+        this.deepClone = function (obj) {
+            if (typeof obj !== 'object' || obj === null) {
+                return obj;
+            }
+            if (Array.isArray(obj)) {
+                var copy_1 = [];
+                obj.forEach(function (item) {
+                    // 使用箭头函数保持this上下文
+                    copy_1.push(_this.deepClone(item));
+                });
+                return copy_1;
+            }
+            var copy = {};
+            for (var key in obj) {
+                if (obj.hasOwnProperty(key)) {
+                    copy[key] = _this.deepClone(obj[key]);
+                }
+            }
+            return copy;
+        };
         if (data) {
             this.treeData = data;
             this.result = data;
@@ -145,7 +166,7 @@ var T = /** @class */ (function () {
         var useLike = options === null || options === void 0 ? void 0 : options.useLike;
         var result = [];
         if (useLike) {
-            this.map(function (node) {
+            this.forEach(function (node) {
                 arr.forEach(function (item) {
                     if (node[keyName].indexOf(item) >= 0) {
                         result.push(node);
@@ -154,7 +175,7 @@ var T = /** @class */ (function () {
             });
         }
         else {
-            this.map(function (node) {
+            this.forEach(function (node) {
                 if (arr.includes(node[keyName])) {
                     result.push(node);
                 }
@@ -234,7 +255,7 @@ var T = /** @class */ (function () {
         return this;
     };
     // 循环所有节点 支持链式调用
-    T.prototype.map = function (cb) {
+    T.prototype.forEach = function (cb) {
         var _this = this;
         var traverse = function (nodes, parentIndex) {
             var temp = Array.isArray(nodes) ? nodes : [nodes];
@@ -398,72 +419,45 @@ var T = /** @class */ (function () {
         return this;
     };
     T.prototype.clone = function () {
-        var deepClone = function (obj) {
-            if (typeof obj !== 'object' || obj === null) {
-                return obj;
-            }
-            if (Array.isArray(obj)) {
-                var copy_1 = [];
-                obj.forEach(function (item) {
-                    copy_1.push(deepClone(item));
-                });
-                return copy_1;
-            }
-            var copy = {};
-            for (var key in obj) {
-                if (obj.hasOwnProperty(key)) {
-                    copy[key] = deepClone(obj[key]);
-                }
-            }
-            return copy;
-        };
-        this.result = deepClone(this.result);
+        this.result = this.deepClone(this.result);
         return this;
     };
-    // list必须传入rootId(根id)
-    T.prototype.listToTree = function (list, rootId) {
-        var _this = this;
-        if (rootId === undefined) {
-            throw new Error('rootId is required');
-        }
-        // 判断根是否存在
-        var hasRoot = false;
-        list.forEach(function (item) {
-            if (item.pid === rootId) {
-                hasRoot = true;
-            }
-        });
-        if (!hasRoot) {
-            // 找不到根
-            throw new Error('cannot find tree root!');
+    // list支持自动识别根节点; 传入rootId则仅以该rootId为根挂载顶层
+    T.prototype.listToTree = function (rootId) {
+        var idKey = this.primaryKeyName;
+        var pidKey = this.pidName;
+        if (!Array.isArray(this.treeData)) {
+            throw new Error('list must be an array');
         }
         var map = {};
         var result = [];
-        var traverse = function (data, pid) {
-            for (var _i = 0, data_1 = data; _i < data_1.length; _i++) {
-                var item = data_1[_i];
-                map[item.id] = __assign({}, item);
+        // 先克隆所有节点到map，键为id
+        for (var _i = 0, _a = this.treeData; _i < _a.length; _i++) {
+            var item = _a[_i];
+            map[item[idKey]] = __assign({}, item);
+        }
+        // 构建父子关系，并确定顶层节点
+        for (var _b = 0, _c = this.treeData; _b < _c.length; _b++) {
+            var item = _c[_b];
+            var node = map[item[idKey]];
+            var parentId = item[pidKey];
+            var parent_1 = map[parentId];
+            var isTopByRootId = rootId !== undefined && parentId === rootId;
+            var isAutoTop = rootId === undefined && (!parent_1 || parentId === null || parentId === undefined);
+            if (isTopByRootId || isAutoTop) {
+                result.push(node);
             }
-            for (var _a = 0, data_2 = data; _a < data_2.length; _a++) {
-                var item = data_2[_a];
-                var node = map[item.id];
-                if (item.pid === pid) {
-                    result.push(node);
+            else if (parent_1) {
+                if (!parent_1[this.childrenName]) {
+                    parent_1[this.childrenName] = [];
                 }
-                else {
-                    // 滚雪球,利用了对象引用地址的一致性,map和result同一对象的引用地址总是一样的
-                    // 先在result中生成了根节点
-                    // 找到的节点根据pid和id的关系挂children挂到最后根节点,map是一个临时的变量
-                    // 有意义的树节点会push到result中
-                    var parent_1 = map[item.pid];
-                    if (!parent_1[_this.childrenName]) {
-                        parent_1[_this.childrenName] = [];
-                    }
-                    parent_1[_this.childrenName].push(node);
-                }
+                parent_1[this.childrenName].push(node);
             }
-        };
-        traverse(list, rootId);
+            else ;
+        }
+        if (result.length === 0) {
+            throw new Error('cannot find tree root!');
+        }
         this.result = result;
         this.treeData = result;
         return this;
@@ -478,7 +472,7 @@ var T = /** @class */ (function () {
                 for (var key in node) {
                     if (key !== _this.childrenName) {
                         temp[key] = node[key];
-                        temp[_this.pidName] = parentId;
+                        temp[_this.pidName] = parentId || node[_this.pidName];
                     }
                 }
                 result.push(temp);
@@ -502,7 +496,7 @@ var T = /** @class */ (function () {
         if (deep === void 0) { deep = true; }
         var result = [];
         if (deep) {
-            this.map(function (item) { return result.push(item[key]); });
+            this.forEach(function (item) { return result.push(item[key]); });
         }
         else {
             result = this.result.map(function (item) { return item[key]; });
@@ -541,6 +535,50 @@ var T = /** @class */ (function () {
             nodes = rightmost[this.childrenName] || [];
         }
         this.result = path;
+        return this;
+    };
+    T.prototype.filter = function (condition) {
+        var _this = this;
+        // 过滤节点的递归函数
+        var filterNodes = function (nodes) {
+            if (!Array.isArray(nodes))
+                return nodes;
+            var filteredNodes = [];
+            for (var _i = 0, nodes_5 = nodes; _i < nodes_5.length; _i++) {
+                var node = nodes_5[_i];
+                // 检查当前节点是否满足条件
+                if (condition(node)) {
+                    // 如果满足条件，复制该节点
+                    var newNode = _this.deepClone(node);
+                    // 如果节点有子节点，递归过滤子节点
+                    if (newNode[_this.childrenName] &&
+                        Array.isArray(newNode[_this.childrenName]) &&
+                        newNode[_this.childrenName].length > 0) {
+                        newNode[_this.childrenName] = filterNodes(newNode[_this.childrenName]);
+                    }
+                    filteredNodes.push(newNode);
+                }
+                else {
+                    // 如果当前节点不满足条件，但仍需要检查其子节点
+                    // 因为子节点可能满足条件，需要保留子树结构
+                    if (node[_this.childrenName] &&
+                        Array.isArray(node[_this.childrenName]) &&
+                        node[_this.childrenName].length > 0) {
+                        var filteredChildren = filterNodes(node[_this.childrenName]);
+                        // 如果子节点中有满足条件的节点，则将这些节点添加到结果中
+                        if (filteredChildren.length > 0) {
+                            var newNode = _this.deepClone(node);
+                            newNode[_this.childrenName] = filteredChildren;
+                            filteredNodes.push(newNode);
+                        }
+                    }
+                }
+            }
+            return filteredNodes;
+        };
+        // 对整个树进行过滤
+        var filteredTree = filterNodes(this.treeData);
+        this.result = filteredTree;
         return this;
     };
     return T;

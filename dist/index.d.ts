@@ -24,7 +24,7 @@ declare class T {
     parents(): this;
     parent(): this;
     flat(): this;
-    map(cb: any): this;
+    forEach(cb: any): this;
     next(): this;
     nextAll(): this;
     prev(): this;
@@ -33,13 +33,15 @@ declare class T {
     remove(treeNode?: any): this;
     prepend(newArr: any): this;
     append(newArr: any): this;
+    private deepClone;
     clone(): this;
-    listToTree(list: any, rootId: any): this;
+    listToTree(rootId?: any): this;
     treeToList(): this;
     siblingsLength(): number;
     toFieldArray(key: any, deep?: boolean): object[];
     addDepth(fieldName?: string): this;
     getRightNodes(cb?: any): this;
+    filter(condition: (node: any) => boolean): this;
 }
 declare const _default: (treeData?: any) => T;
 export default _default;
