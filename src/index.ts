@@ -123,7 +123,7 @@ class T {
 
   getByKeys(keyName, arr, options?) {
     const useLike = options?.useLike
-    let result:any = []
+    let result: any = []
     if (useLike) {
       this.map((node) => {
         arr.forEach((item) => {
@@ -494,17 +494,17 @@ class T {
   // 给每一个节点添加深度标识
   addDepth(fieldName = 'depth') {
     const traverse = (nodes, depth = 0) => {
-      const temp = Array.isArray(nodes) ? nodes : [nodes];
+      const temp = Array.isArray(nodes) ? nodes : [nodes]
       for (let node of temp) {
-        node[fieldName] = depth;
+        node[fieldName] = depth
         if (node[this.childrenName] && node[this.childrenName].length > 0) {
-          traverse(node[this.childrenName], depth + 1);
+          traverse(node[this.childrenName], depth + 1)
         }
       }
-    };
+    }
 
-    traverse(this.result);
-    return this;
+    traverse(this.result)
+    return this
   }
 
   // 获取右侧路径：从根到叶子节点的最右侧路径
@@ -512,16 +512,16 @@ class T {
   getRightNodes(cb?) {
     const path: any[] = []
     let nodes = Array.isArray(this.result) ? this.result : [this.result]
-    
+
     while (nodes.length > 0) {
       const rightmost = nodes[nodes.length - 1]
       if (!rightmost) break
-      
+
       path.push(rightmost)
       cb?.(rightmost)
       nodes = rightmost[this.childrenName] || []
     }
-    
+
     this.result = path
     return this
   }
